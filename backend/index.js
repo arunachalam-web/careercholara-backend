@@ -14,15 +14,33 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// === CORS setup (use FRONTEND_URL if provided; otherwise allow all for testing) ===
-const FRONTEND_URL = process.env.FRONTEND_URL || '';
+// --- Read FRONTEND_URL and sanitize it ---
+let rawFrontend = process.env.FRONTEND_URL || '';
+rawFrontend = String(rawFrontend).trim();
 
-const corsOptions = FRONTEND_URL
-  ? { origin: FRONTEND_URL, credentials: true } // allow only your frontend
-  : { origin: true, credentials: true };        // allow all origins (testing fallback)
+// remove illegal characters that break headers
+rawFrontend = rawFrontend.replace(/[\n\r<>"]/g, '');
+
+// build allowed list: if comma-separated, split into multiple
+const allowedOrigins = rawFrontend
+  ? rawFrontend.split(',').map(s => s.trim()).filter(Boolean)
+  : [];
+
+// cors options: allow requests from allowedOrigins; if none set, allow all (for testing)
+const corsOptions = allowedOrigins.length
+  ? {
+      origin: function (origin, callback) {
+        // allow if no origin (e.g., server-to-server or curl), or if origin is in allowed list
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+        return callback(new Error(`CORS blocked: ${origin}`));
+      },
+      credentials: true,
+    }
+  : { origin: true, credentials: true };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // enable pre-flight for all routes
+app.options('*', cors(corsOptions)); // enable pre-flight
 
 // Middleware
 app.use(express.json());
@@ -41,8 +59,8 @@ app.use(errorHandler);
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  if (FRONTEND_URL) {
-    console.log(`CORS allowed for: ${FRONTEND_URL}`);
+  if (allowedOrigins.length) {
+    console.log('CORS allowed for:', allowedOrigins);
   } else {
     console.log('CORS allowed for all origins (no FRONTEND_URL set)');
   }
