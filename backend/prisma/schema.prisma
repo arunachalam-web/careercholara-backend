@@ -1,26 +1,24 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider ="postgresql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  isAdmin   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String       @id @default(cuid())
+  email       String       @unique
+  password    String
+  name        String?
+  isAdmin     Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  planUsages PlanUsage[]
-  payments   Payment[]
+  planUsages  PlanUsage[]
+  payments    Payment[]
   resumeChecks ResumeCheck[]
 }
 
@@ -35,40 +33,38 @@ model PlanUsage {
 }
 
 model Question {
-  id          String   @id @default(cuid())
-  question    String
-  options     String   // JSON array of options
-  correctAnswer Int    // Index of correct option (0-based)
-  explanation String?
-  category    String?  // "quantitative", "logical", "verbal", etc.
-  difficulty  String?  // "easy", "medium", "hard"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  question      String
+  options       Json     // use JSON for array of options
+  correctAnswer Int      // Index of correct option (0-based)
+  explanation   String?
+  category      String?  // "quantitative", "logical", "verbal", etc.
+  difficulty    String?  // "easy", "medium", "hard"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Payment {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  razorpayOrderId String @unique
-  amount        Float
-  currency      String   @default("INR")
-  status        String   // "pending" | "completed" | "failed"
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  razorpayOrderId String   @unique
+  amount          Decimal  @db.Decimal(10, 2) // stable money type
+  currency        String   @default("INR")
+  status          String   // "pending" | "completed" | "failed"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([userId])
 }
 
 model ResumeCheck {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   resumeText String
-  analysis  String?  // JSON or text analysis result
-  createdAt DateTime @default(now())
+  analysis   String?  // JSON or text analysis result
+  createdAt  DateTime @default(now())
 
   @@index([userId])
 }
-
-
