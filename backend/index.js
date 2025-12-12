@@ -14,8 +14,17 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// === CORS setup (use FRONTEND_URL if provided; otherwise allow all for testing) ===
+const FRONTEND_URL = process.env.FRONTEND_URL || '';
+
+const corsOptions = FRONTEND_URL
+  ? { origin: FRONTEND_URL, credentials: true } // allow only your frontend
+  : { origin: true, credentials: true };        // allow all origins (testing fallback)
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // enable pre-flight for all routes
+
 // Middleware
-app.use(cors());
 app.use(express.json());
 
 // Routes
@@ -32,5 +41,9 @@ app.use(errorHandler);
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  if (FRONTEND_URL) {
+    console.log(`CORS allowed for: ${FRONTEND_URL}`);
+  } else {
+    console.log('CORS allowed for all origins (no FRONTEND_URL set)');
+  }
 });
-
