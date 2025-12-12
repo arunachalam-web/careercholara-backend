@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  planUsages PlanUsage[]
+  payments   Payment[]
+  resumeChecks ResumeCheck[]
+}
+
+model PlanUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "aptitude" | "resume"
+  usedAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  question    String
+  options     String   // JSON array of options
+  correctAnswer Int    // Index of correct option (0-based)
+  explanation String?
+  category    String?  // "quantitative", "logical", "verbal", etc.
+  difficulty  String?  // "easy", "medium", "hard"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  razorpayOrderId String @unique
+  amount        Float
+  currency      String   @default("INR")
+  status        String   // "pending" | "completed" | "failed"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ResumeCheck {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeText String
+  analysis  String?  // JSON or text analysis result
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
